@@ -113,7 +113,7 @@ TwitchWebhook.prototype.subscribe = async function(topic, eventName) {
                         this.config.callbackUrl + '?item.id=' + item.id,
                     'hub.mode': 'subscribe',
                     'hub.topic': topic,
-                    'hub.lease_seconds': 864000,
+                    'hub.lease_seconds': this.config.lease,
                     'hub.secret': item.secret
                 },
                 json: true
@@ -154,14 +154,12 @@ TwitchWebhook.prototype.handleRequest = function(method, headers, qs, body) {
  * @param {string} id The subscription ID.
  * @returns {Promise} The subscription promise that will be resolved when it receives the response.
  */
-TwitchWebhook.prototype.unsubscribe = async function(id) {
+TwitchWebhook.prototype.unsubscribe = async function(item) {
     return new Promise(async (resolve, reject) => {
         try {
             this.logger.debug(
-                'Requesting Webhook unsubscription with id: ' + id
+                'Requesting Webhook unsubscription with id: ' + item.id
             );
-            if (this.subscribersMap.get(id)) {
-                let item = this.subscribersMap.get(id);
                 await request({
                     url: API_BASE_URL + '/webhooks/hub',
                     method: 'POST',
@@ -174,14 +172,11 @@ TwitchWebhook.prototype.unsubscribe = async function(id) {
                             this.config.callbackUrl + '?item.id=' + item.id,
                         'hub.mode': 'unsubscribe',
                         'hub.topic': item.topic,
-                        'hub.secret': item.secret
+                        'hub.secret': '0x1s2a3'
                     },
                     json: true
                 });
                 item.promise = { resolve, reject };
-            } else {
-                reject(new Error(`Unable to find subscription with id ${id}`));
-            }
         } catch (err) {
             reject(err);
         }
